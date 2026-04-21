@@ -39,14 +39,19 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// חשוב ל-Render שנמצא מאחורי proxy
+app.set('trust proxy', 1);
+
 // Session — חובה לפני Passport
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret_key_123',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: isProduction,           // true ב-HTTPS (production), false ב-localhost
     httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax', // 'none' מאפשר cross-origin cookies
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
