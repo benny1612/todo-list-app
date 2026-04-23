@@ -203,10 +203,10 @@ const TodoList = () => {
                           : 'bg-slate-800 border-slate-700'
                       }`}
                     >
-                      {/* ידית גרירה — מוסתרת במובייל, גלויה ב-hover בדסקטופ */}
+                      {/* ידית גרירה — גלויה בכל מכשיר כולל מובייל */}
                       <div
                         {...provided.dragHandleProps}
-                        className="text-slate-600 cursor-grab active:cursor-grabbing hidden sm:block"
+                        className="text-slate-600 cursor-grab active:cursor-grabbing touch-none shrink-0 p-1 -ml-1"
                       >
                         <GripVertical size={18} />
                       </div>

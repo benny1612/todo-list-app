@@ -9,6 +9,7 @@ dotenv.config();
 const http = require('http');
 const { Server } = require('socket.io');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('passport');
 
 // 2. טוענים passport אחרי שה-env נטען
@@ -48,11 +49,17 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'secret_key_123',
   resave: false,
   saveUninitialized: false,
+  // שמירת sessions ב-MongoDB כדי שישרדו restarts של השרת
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    ttl: 7 * 24 * 60 * 60,       // 7 ימים בשניות
+    autoRemove: 'native'
+  }),
   cookie: {
     secure: isProduction,           // true ב-HTTPS (production), false ב-localhost
     httpOnly: true,
     sameSite: isProduction ? 'none' : 'lax', // 'none' מאפשר cross-origin cookies
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000  // 7 ימים
   }
 }));
 
