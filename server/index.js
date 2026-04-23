@@ -9,7 +9,6 @@ dotenv.config();
 const http = require('http');
 const { Server } = require('socket.io');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const passport = require('passport');
 
 // 2. טוענים passport אחרי שה-env נטען
@@ -45,20 +44,34 @@ app.set('trust proxy', 1);
 
 // Session — חובה לפני Passport
 const isProduction = process.env.NODE_ENV === 'production';
+
+// בניית session store — MongoStore אם זמין, אחרת memory
+let sessionStore;
+try {
+  const MongoStore = require('connect-mongo');
+  if (typeof MongoStore.create === 'function') {
+    sessionStore = MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 7 * 24 * 60 * 60,    // 7 ימים
+      autoRemove: 'native'
+    });
+    console.log('✅ Using MongoStore for sessions');
+  } else {
+    console.warn('⚠️  connect-mongo .create() not available — using memory store');
+  }
+} catch (e) {
+  console.warn('⚠️  connect-mongo not available — using memory store:', e.message);
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret_key_123',
   resave: false,
   saveUninitialized: false,
-  // שמירת sessions ב-MongoDB כדי שישרדו restarts של השרת
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    ttl: 7 * 24 * 60 * 60,       // 7 ימים בשניות
-    autoRemove: 'native'
-  }),
+  ...(sessionStore ? { store: sessionStore } : {}),
   cookie: {
-    secure: isProduction,           // true ב-HTTPS (production), false ב-localhost
+    secure: isProduction,
     httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax', // 'none' מאפשר cross-origin cookies
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000  // 7 ימים
   }
 }));
