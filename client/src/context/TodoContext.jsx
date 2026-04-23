@@ -23,12 +23,34 @@ export const TodoProvider = ({ children }) => {
     socket.on('tasks-reordered', ({ listId, items }) => updateItems(listId, items));
     socket.on('tasks-reset', ({ listId, items }) => updateItems(listId, items));
 
+    // עדכון autoReset בזמן אמת
+    socket.on('auto-reset-changed', ({ listId, autoReset }) => {
+      setCurrentList(prev =>
+        prev && prev._id === listId ? { ...prev, autoReset } : prev
+      );
+    });
+
+    // הסרת חבר בזמן אמת
+    socket.on('member-removed', ({ listId, userId }) => {
+      setCurrentList(prev => {
+        if (!prev || prev._id !== listId) return prev;
+        return {
+          ...prev,
+          members: prev.members?.filter(m =>
+            (m._id || m).toString() !== userId
+          )
+        };
+      });
+    });
+
     return () => {
       socket.off('task-added');
       socket.off('task-updated');
       socket.off('task-deleted');
       socket.off('tasks-reordered');
       socket.off('tasks-reset');
+      socket.off('auto-reset-changed');
+      socket.off('member-removed');
       socket.disconnect();
     };
   }, []);
@@ -77,6 +99,22 @@ export const TodoProvider = ({ children }) => {
     }
   };
 
+  const removeMember = async (listId, userId) => {
+    await api.delete(`/todos/${listId}/members/${userId}`);
+    // socket event מטפל בעדכון ה-UI
+  };
+
+  const toggleAutoReset = async (listId) => {
+    try {
+      const res = await api.put(`/todos/${listId}/auto-reset`);
+      setCurrentList(prev =>
+        prev && prev._id === listId ? { ...prev, autoReset: res.data.autoReset } : prev
+      );
+    } catch (err) {
+      console.error('toggleAutoReset failed:', err);
+    }
+  };
+
   return (
     <TodoContext.Provider value={{
       currentList,
@@ -84,7 +122,9 @@ export const TodoProvider = ({ children }) => {
       leaveList,
       toggleItem,
       setCurrentList,
-      deleteItem
+      deleteItem,
+      removeMember,
+      toggleAutoReset
     }}>
       {children}
     </TodoContext.Provider>

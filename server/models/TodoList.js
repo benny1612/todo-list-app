@@ -21,6 +21,9 @@ const TodoListSchema = new mongoose.Schema({
   // קוד שיתוף ייחודי 8 תווים
   shareCode: { type: String, unique: true, default: generateShareCode },
 
+  // האם הרשימה מתאפסת אוטומטית כשכל המשימות הושלמו
+  autoReset: { type: Boolean, default: true },
+
   items: [
     {
       id: { type: String, required: true },

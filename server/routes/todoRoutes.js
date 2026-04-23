@@ -14,7 +14,9 @@ const {
   reorderItems,
   checkAll,
   resetList,
-  deleteList
+  deleteList,
+  removeMember,
+  toggleAutoReset
 } = require('../controllers/todoController');
 
 // --- רשימות ---
@@ -33,6 +35,12 @@ router.put('/update-item', isAuthenticated, updateTodoItem);
 router.get('/:id', isAuthenticated, getList);
 router.put('/:id/name', isAuthenticated, updateListName);
 router.delete('/:id', isAuthenticated, deleteList);
+
+// --- ניהול חברים ---
+router.delete('/:id/members/:userId', isAuthenticated, removeMember);
+
+// --- Auto-Reset toggle ---
+router.put('/:id/auto-reset', isAuthenticated, toggleAutoReset);
 
 // --- משימות ---
 router.post('/:listId/items', isAuthenticated, addItem);

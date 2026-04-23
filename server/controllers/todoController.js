@@ -1,4 +1,5 @@
 const TodoList = require('../models/TodoList');
+const User = require('../models/User');
 
 // --- עזר: יצירת shareCode ייחודי ---
 function generateShareCode() {
@@ -39,6 +40,7 @@ exports.createList = async (req, res) => {
       owner: req.user._id,
       members: [req.user._id], // הבעלים הוא גם member אוטומטית
       shareCode,
+      autoReset: true,
       items: []
     });
     res.json(newList);
@@ -47,10 +49,12 @@ exports.createList = async (req, res) => {
   }
 };
 
-// 3. שליפת רשימה ספציפית
+// 3. שליפת רשימה ספציפית (עם populate של members)
 exports.getList = async (req, res) => {
   try {
-    const list = await TodoList.findOne({ _id: req.params.id, members: req.user._id });
+    const list = await TodoList.findOne({ _id: req.params.id, members: req.user._id })
+      .populate('members', 'displayName avatar email _id')
+      .populate('owner', '_id');
     if (!list) return res.status(404).json({ error: 'רשימה לא נמצאה' });
     res.json(list);
   } catch (err) {
@@ -195,7 +199,7 @@ exports.reorderItems = async (req, res) => {
   }
 };
 
-// 10. Check All — סימון כל הפריטים (+ client יתחיל countdown לאיפוס)
+// 10. Check All — סימון כל הפריטים
 exports.checkAll = async (req, res) => {
   try {
     const { listId } = req.params;
@@ -243,6 +247,45 @@ exports.deleteList = async (req, res) => {
       return res.status(404).json({ error: 'רשימה לא נמצאה או שאין לך הרשאה למחוק אותה' });
     }
     res.json({ message: 'הרשימה נמחקה בהצלחה' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 13. הסרת חבר מרשימה (owner בלבד)
+exports.removeMember = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+    const list = await TodoList.findOne({ _id: id, owner: req.user._id });
+    if (!list) return res.status(403).json({ error: 'אין הרשאה — רק הבעלים יכול להסיר חברים' });
+
+    // לא ניתן להסיר את הבעלים עצמו
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({ error: 'לא ניתן להסיר את עצמך כבעלים' });
+    }
+
+    list.members = list.members.filter(m => m.toString() !== userId);
+    await list.save();
+
+    req.io.to(id).emit('member-removed', { listId: id, userId });
+    res.json({ message: 'החבר הוסר בהצלחה' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 14. Toggle Auto-Reset (owner בלבד)
+exports.toggleAutoReset = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const list = await TodoList.findOne({ _id: id, owner: req.user._id });
+    if (!list) return res.status(403).json({ error: 'אין הרשאה — רק הבעלים יכול לשנות הגדרות' });
+
+    list.autoReset = !list.autoReset;
+    await list.save();
+
+    req.io.to(id).emit('auto-reset-changed', { listId: id, autoReset: list.autoReset });
+    res.json({ autoReset: list.autoReset });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
