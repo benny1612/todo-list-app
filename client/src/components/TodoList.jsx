@@ -3,6 +3,7 @@ import { useTodo } from '../context/TodoContext';
 import { useAuth } from '../context/AuthContext';
 import MembersPanel from './MembersPanel';
 import ThemeToggle from './ThemeToggle';
+import ConfirmDialog from './ConfirmDialog';
 import {
   CheckCircle2, Circle, Trash2, Plus, GripVertical,
   ChevronRight, Loader2, PartyPopper, Copy, Check,
@@ -23,6 +24,7 @@ const TodoList = () => {
   const [editingText, setEditingText] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, text }
   const resetTimerRef = useRef(null);
   const countdownRef = useRef(null);
 
@@ -92,6 +94,18 @@ const TodoList = () => {
     catch { toast.error('שגיאה במחיקה'); }
   };
 
+  const handleDeleteRequest = (item) => {
+    setConfirmDelete({ id: item.id, text: item.text });
+  };
+
+  const handleConfirmDelete = async () => {
+    const id = confirmDelete?.id;
+    setConfirmDelete(null);
+    if (id) await deleteItem(id);
+  };
+
+  const handleCancelDelete = () => setConfirmDelete(null);
+
   const handleCheckAll = async () => {
     try { await api.put(`/todos/${currentList._id}/check-all`); }
     catch { toast.error('שגיאה'); }
@@ -142,6 +156,14 @@ const TodoList = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors" dir="rtl">
       <Toaster position="top-center" toastOptions={{ style: { direction: 'rtl', fontSize: '14px' } }} />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        taskText={confirmDelete?.text}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
 
       {/* Members Panel */}
       {showMembers && (
@@ -341,7 +363,7 @@ const TodoList = () => {
                               <Pencil size={14} />
                             </button>
                             <button
-                              onClick={() => deleteItem(item.id)}
+                              onClick={() => handleDeleteRequest(item)}
                               className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg transition-all"
                             >
                               <Trash2 size={14} />

@@ -1,3 +1,81 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* ===== Confirm Dialog ===== */
+  .confirm-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(6px);
+    animation: overlayIn 0.2s ease;
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .confirm-card {
+    @apply relative flex flex-col items-center gap-3 w-full max-w-sm
+           bg-white dark:bg-slate-800
+           rounded-3xl p-7 shadow-2xl
+           border border-slate-200 dark:border-slate-700;
+    animation: cardIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.88) translateY(12px); }
+    to   { opacity: 1; transform: scale(1)   translateY(0);     }
+  }
+
+  .confirm-icon-ring {
+    @apply flex items-center justify-center w-16 h-16 rounded-full
+           bg-red-50 dark:bg-red-500/10
+           border-2 border-red-200 dark:border-red-500/30;
+  }
+
+  .confirm-icon {
+    @apply w-8 h-8 text-red-500;
+  }
+
+  .confirm-title {
+    @apply text-xl font-black text-slate-800 dark:text-white tracking-tight;
+  }
+
+  .confirm-body {
+    @apply text-sm text-slate-500 dark:text-slate-400 text-center leading-relaxed m-0;
+  }
+
+  .confirm-task-name {
+    @apply text-sm font-bold text-slate-700 dark:text-slate-200 text-center
+           bg-slate-100 dark:bg-slate-700/60
+           rounded-xl px-4 py-2 w-full truncate m-0;
+    direction: rtl;
+  }
+
+  .confirm-note {
+    @apply text-xs text-red-400 dark:text-red-400/80 text-center m-0;
+  }
+
+  .confirm-actions {
+    @apply flex items-center gap-2.5 w-full mt-1;
+  }
+
+  .confirm-btn-cancel {
+    @apply flex-1 flex items-center justify-center gap-1.5
+           py-3 rounded-2xl text-sm font-semibold
+           bg-slate-100 dark:bg-slate-700
+           text-slate-600 dark:text-slate-300
+           hover:bg-slate-200 dark:hover:bg-slate-600
+           transition-all active:scale-95;
+  }
+
+  .confirm-btn-delete {
+    @apply flex-1 flex items-center justify-center gap-1.5
+           py-3 rounded-2xl text-sm font-semibold
+           bg-red-500 hover:bg-red-600
+           text-white shadow-lg shadow-red-500/30
+           transition-all active:scale-95;
+  }
+}
